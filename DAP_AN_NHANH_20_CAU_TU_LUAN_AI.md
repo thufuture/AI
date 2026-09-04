@@ -96,9 +96,13 @@ Tôi gắn metadata `effective_date`, trạng thái hiệu lực, phòng ban và
 
 ### Đáp án nhanh
 
-**Trả lời nhanh:** Fixed-size chunking cắt theo số token nên có thể tách điều khoản khỏi ngoại lệ, bảng phí hoặc phụ lục; retriever lấy một mảnh đúng từ khóa nhưng sai nghĩa đầy đủ. Đây là lỗi ingestion/chunking làm giảm context completeness.
+**Trả lời nhanh:** Fixed-size chunking cắt theo số token nên có thể tách điều khoản khỏi ngoại lệ, bảng phí hoặc phụ lục. Retriever có thể lấy một mảnh đúng từ khóa nhưng thiếu nghĩa đầy đủ. Đây là lỗi ingestion/chunking làm giảm context completeness và Context Recall.
 
-Tôi dùng structure-aware chunking theo điều–khoản–mục, giữ nguyên bảng, metadata và liên kết tham chiếu; kết hợp parent-child retrieval để tìm đoạn nhỏ nhưng trả thêm phần cha. Tạo golden set gồm câu nhiều điều kiện, so sánh fixed-size với phương án mới bằng Context Recall/Precision, faithfulness và citation accuracy. Vì sai pháp lý có hậu quả cao, đặt confidence threshold, bắt buộc trích nguồn và human review; chi phí ingest cao hơn chỉ đáng khi giảm critical error đủ lớn.
+Tôi kết hợp **recursive chunking với parent-child retrieval**. Recursive chunking chia hợp đồng lần lượt theo tiêu đề, điều–khoản–mục, đoạn rồi câu, giúp hạn chế cắt ngang ý. Các child chunk nhỏ được dùng để tìm kiếm chính xác; sau khi tìm thấy child phù hợp, hệ thống lấy thêm parent chunk lớn hơn để LLM đọc đủ điều khoản, ngoại lệ và ngữ cảnh. Mỗi chunk cần lưu `parent_id`, số điều khoản, phụ lục, ngày hiệu lực, quyền truy cập và liên kết đến bảng liên quan.
+
+Tôi tạo golden set gồm các câu nhiều điều kiện và so sánh phương án mới với fixed-size trên cùng tập bằng Context Recall, Context Precision, faithfulness, citation accuracy, latency và cost. Vì trả lời sai pháp lý có hậu quả cao, hệ thống phải đặt confidence threshold, bắt buộc trích nguồn và chuyển human review khi thiếu bằng chứng. Chỉ production nếu critical error giảm đủ lớn, đồng thời latency và cost vẫn nằm trong release gate.
+
+**Câu nhớ:** *Recursive giúp chia hợp lý; parent-child giúp tìm chính xác nhưng vẫn lấy đủ ngữ cảnh.*
 
 ## Câu 6 — IT helpdesk bị indirect prompt injection
 
